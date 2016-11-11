@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/creack/goproxy/registry"
 	"github.com/samuel/go-zookeeper/zk"
 )
 
@@ -131,7 +130,7 @@ func TestDeleteVersion(t *testing.T) {
 	time.Sleep(1 * time.Millisecond)
 
 	// Make sure the registry picked it up.
-	assertLookupResult(t, conn, "name", "version", nil, registry.ErrServiceNotFound)
+	assertLookupResult(t, conn, "name", "version", nil, ErrServiceNotFound)
 
 	// Manually check the state of the registry as well.
 	conn.ZKRegistry.lock.RLock()
@@ -170,7 +169,7 @@ func TestDeleteService(t *testing.T) {
 	time.Sleep(1 * time.Millisecond)
 
 	// Make sure the registry picked it up.
-	assertLookupResult(t, conn, "name", "version", nil, registry.ErrServiceNotFound)
+	assertLookupResult(t, conn, "name", "version", nil, ErrServiceNotFound)
 
 	// Manually check the state of the registry as well.
 	conn.ZKRegistry.lock.RLock()
@@ -187,21 +186,21 @@ func TestDeleteNotExisting(t *testing.T) {
 	defer conn.Close()
 
 	// Make sure the service's endpoint deos not exists.
-	assertLookupResult(t, conn, "name", "version", nil, registry.ErrServiceNotFound)
+	assertLookupResult(t, conn, "name", "version", nil, ErrServiceNotFound)
 	// Call the delete, should not panic.
 	conn.ZKRegistry.DeleteEndpoint("name", "version", "addr")
 	// Make sure it is stll not there.
-	assertLookupResult(t, conn, "name", "version", nil, registry.ErrServiceNotFound)
+	assertLookupResult(t, conn, "name", "version", nil, ErrServiceNotFound)
 
 	// Call the delete, should not panic.
 	conn.ZKRegistry.DeleteVersion("name", "version")
 	// Make sure it is stll not there.
-	assertLookupResult(t, conn, "name", "version", nil, registry.ErrServiceNotFound)
+	assertLookupResult(t, conn, "name", "version", nil, ErrServiceNotFound)
 
 	// Call the delete, should not panic.
 	conn.ZKRegistry.DeleteService("name")
 	// Make sure it is stll not there.
-	assertLookupResult(t, conn, "name", "version", nil, registry.ErrServiceNotFound)
+	assertLookupResult(t, conn, "name", "version", nil, ErrServiceNotFound)
 
 }
 

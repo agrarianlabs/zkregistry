@@ -1,12 +1,8 @@
-hash: 76edb923415bc51f94c979c84baf3d6dc043d5f027fb88cb8486ec798c8b9fdc
-updated: 2016-11-11T10:57:49.598930818-06:00
+hash: 43041a4446fb67219ea7b0cf2684ac73fbe842259ab6f2ee2d608b4cc2e617a5
+updated: 2016-11-11T19:57:47.608300663Z
 imports:
 - name: github.com/agrarianlabs/zkwatcher
   version: cf77705abc33c6907fd59f8808337c0074e6c84f
-- name: github.com/creack/goproxy
-  version: 9c50ef00f28719502e2c56aa431bbe52c1f42986
-  subpackages:
-  - registry
 - name: github.com/samuel/go-zookeeper
   version: 177002e16a0061912f02377e2dd8951a8b3551bc
   subpackages:

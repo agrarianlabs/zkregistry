@@ -7,22 +7,22 @@ ZK_C    = zkregistry_zk_c
 ZK_PORT = 2181
 ZK_CLI ?= docker run --rm=$(RM_TMP) --link $(ZK_C):zk -i --entrypoint /bin/sh $(ZK_I) -c './bin/zkCli.sh -server zk' > /dev/null
 
-TEST_I ?= zkregistry/test
+TEST_I ?= agrarianlabs/zkregistry-test
 TEST_C  = zkregistry_test_c
-REV_ID ?= $(shell git rev-parse HEAD)
+REV_ID  = $(shell git rev-parse HEAD)
+REV_NAME= $(shell git describe --dirty --tags)
+
+GLIDE_I ?= calavera/go-glide:v0.12.2
+APP_NAME = github.com/agrarianlabs/zkregistry
 
 # gometalinter options.
 L_OPTS ?=
 # go test options.
 OPTS   ?= -v -run .
 
-SRCS    = registry.go      \
-          registry_test.go \
-          helper_test.go   \
-          utils.go         \
-          utils_test.go    \
-          Dockerfile       \
-          glide.lock	   \
+SRCS    = $(shell find . -name '*.go') \
+          Dockerfile \
+          glide.lock \
           vendor
 
 # Default target.
@@ -59,11 +59,25 @@ zk_stop :
 build   : .build
 .build  : $(SRCS)
 	@echo "Building docker image." >&2
-	docker build --rm=$(RM_TMP) -t $(TEST_I):$(REV_ID) .
+	docker build --rm=$(RM_TMP) -t '$(TEST_I):$(REV_ID)' --build-arg APP_NAME=$(APP_NAME) .
+
+	@$(eval NOW := $(shell date -u +%Y-%m-%d.%H-%M-%S))
+	docker tag '$(TEST_I):$(REV_ID)' '$(TEST_I):$(NOW).$(REV_ID)'
+	docker tag '$(TEST_I):$(REV_ID)' '$(TEST_I):$(NOW).$(REV_NAME)'
+
 	@echo "Docker image built" >&2
 	@touch $@
 ## !Build targts.
 
+## Vendor targets.
+glide_up: glide.yaml
+	@rm -rf vendor glide.lock
+	docker run -i -t=$(TTY) --rm=$(RM_TMP) \
+		-v $(shell pwd):/go/src/$(APP_NAME) \
+		-w /go/src/$(APP_NAME) \
+	$(GLIDE_I) \
+	glide up -v --skip-test --all-dependencies
+## !Vendor targets.
 
 # Unless we specify SKIP_FMT=1, run test_fmt with test.
 ifeq ($(SKIP_FMT),)
@@ -94,4 +108,4 @@ test_int: zk_start build
 clean   : zk_stop
 	@rm -f coverprofile .build .zk_port
 
-.PHONY  : all zk_start zk_stop build test test_fmt test_int clean
+.PHONY  : all zk_start zk_stop build test test_fmt test_int clean glide_up

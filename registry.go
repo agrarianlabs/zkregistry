@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/agrarianlabs/zkwatcher"
-	"github.com/creack/goproxy/registry"
 	"github.com/samuel/go-zookeeper/zk"
 )
 
@@ -36,7 +35,8 @@ type ZKRegistry struct {
 
 // Common errors.
 var (
-	ErrNilConn = errors.New("can't create registry with <nil> zk connection")
+	ErrNilConn         = errors.New("can't create registry with <nil> zk connection")
+	ErrServiceNotFound = errors.New("service not found")
 )
 
 // New .
@@ -166,7 +166,7 @@ func (reg *ZKRegistry) Lookup(name, version string) ([]string, error) {
 	targets, ok := reg.services[name][version]
 	reg.lock.RUnlock()
 	if !ok {
-		return nil, registry.ErrServiceNotFound
+		return nil, ErrServiceNotFound
 	}
 	return targets, nil
 }
