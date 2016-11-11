@@ -1,0 +1,10 @@
+package: github.com/agrarianlabs/zkregistry
+import:
+- package: github.com/agrarianlabs/zkwatcher
+  version: ^0.1.0
+- package: github.com/creack/goproxy
+  subpackages:
+  - registry
+- package: github.com/samuel/go-zookeeper
+  subpackages:
+  - zk

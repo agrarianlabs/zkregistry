@@ -1,0 +1,44 @@
+# The current version of docker on circleci doesn't support mounting the docker socket
+# as of 2016-10-25, docker version 1.9. Using 1.10 fixes the issue.
+machine:
+  pre:
+    - curl -sSL https://s3.amazonaws.com/circle-downloads/install-circleci-docker.sh | bash -s -- 1.10.0
+  services:
+    - docker
+  environment:
+    RM_TMP: false
+    TTY: false
+
+# NOTE: All the `make` call are optional and there to make the circle ci output nice / help parallelize.
+#       `make test` is enough by itself to handle all deps / runtime / run the tests.
+dependencies:
+  pre:
+    - make clean
+    - mkdir -p $CIRCLE_TEST_REPORTS/junit
+    - mkdir -p $CIRCLE_TEST_REPORTS/fmt
+    - touch fmt.xml
+    - mkdir -p $CIRCLE_ARTIFACTS/gocov
+  override:
+    # Golang base image.
+    - docker pull golang:1.7
+    # Zookeeper runtime image.
+    - docker pull jplock/zookeeper:3.4.9
+    # CircleCi specific tools: gocov, junit, etc
+    - docker pull creack/golangbase:1.7
+  post:
+    - make build
+
+test:
+  pre:
+    - make zk_start
+  override:
+    - make test_fmt || make test_fmt L_OPTS='--checkstyle' > fmt.xml
+    - set -o pipefail; make test SKIP_FMT=1 | tee out.txt; ret=$?; cat out.txt | docker run -i creack/golangbase:1.7 go-junit-report > junit.xml; [ $ret = 0 ]
+  post:
+    - cat coverprofile | docker run -i -v $(pwd):/go/src/github.com/agrarianlabs/zkregistry creack/golangbase:1.7 sh -c 'cat > coverprofile && gocov convert coverprofile | gocov-xml' > coverage.xml
+    - cat coverprofile | docker run -i -v $(pwd):/go/src/github.com/agrarianlabs/zkregistry creack/golangbase:1.7 sh -c 'cat > coverprofile && gocov convert coverprofile | gocov-html' > coverage.html
+    - cp junit.xml     $CIRCLE_TEST_REPORTS/junit/junit.xml
+    - cp fmt.xml       $CIRCLE_TEST_REPORTS/fmt/fmt.xml
+    - cp coverage.xml  $CIRCLE_ARTIFACTS/gocov/coverage.xml
+    - cp coverage.html $CIRCLE_ARTIFACTS/gocov/index.html
+    - make clean
